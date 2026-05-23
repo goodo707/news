@@ -1,0 +1,2 @@
+rootProject.name = 'news-backend'
+include 'core', 'rss', 'push', 'app'
