@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 @Table(name = "users")
 @Getter
 @NoArgsConstructor
-public class UserProfile {
+public class User {
 
     @Id
     private Long id;
@@ -28,8 +28,8 @@ public class UserProfile {
     @Column(name = "dnd_end")
     private String dndEnd;
 
-    public UserProfile(Long id, String name, String deviceId, String pushType,
-                       String dndStart, String dndEnd) {
+    public User(Long id, String name, String deviceId, String pushType,
+                String dndStart, String dndEnd) {
         this.id = id;
         this.name = name;
         this.deviceId = deviceId;
