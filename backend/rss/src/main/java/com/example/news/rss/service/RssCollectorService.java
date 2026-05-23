@@ -9,6 +9,7 @@ import com.example.news.rss.parser.ArticleDraft;
 import com.example.news.rss.parser.RssParser;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,6 +24,8 @@ import java.util.Optional;
 @Service
 @RequiredArgsConstructor
 public class RssCollectorService {
+
+    private static final long MAX_ARTICLES = 1000;
 
     private static final DateTimeFormatter ISO_LOCAL = DateTimeFormatter
         .ofPattern("yyyy-MM-dd'T'HH:mm:ss")
@@ -42,6 +45,21 @@ public class RssCollectorService {
             }
         }
         log.info("[rss] 전체 수집 완료: 신규 {}건", totalNew);
+
+        cleanupOldArticles();
+    }
+
+    @Transactional
+    public void cleanupOldArticles() {
+        long total = articleRepository.count();
+        if (total <= MAX_ARTICLES) return;
+
+        int toDelete = (int) (total - MAX_ARTICLES);
+        List<Article> oldest = articleRepository
+            .findAllByOrderByPubDateAsc(PageRequest.of(0, toDelete));
+        articleRepository.deleteAllInBatch(oldest);
+        log.info("[rss] cleanup: {}건 삭제 (전 {} → 후 {})",
+            oldest.size(), total, MAX_ARTICLES);
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
