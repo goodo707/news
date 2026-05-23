@@ -38,3 +38,6 @@ logs/
 # 환경 변수
 .env
 .env.local
+
+# Claude Code 작업용 설계 문서 (로컬 전용)
+docs/superpowers/
