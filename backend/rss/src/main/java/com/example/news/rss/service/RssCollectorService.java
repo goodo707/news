@@ -11,7 +11,6 @@ import com.example.news.rss.parser.RssParser;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
@@ -66,7 +65,6 @@ public class RssCollectorService {
             deleted, total, MAX_ARTICLES);
     }
 
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public int collectOne(RssCategory cat) {
         Optional<Category> categoryOpt = categoryRepository.findByName(cat.getCategoryName());
         if (categoryOpt.isEmpty()) {
