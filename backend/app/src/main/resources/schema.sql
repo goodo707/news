@@ -45,3 +45,4 @@ CREATE TABLE IF NOT EXISTS push_log (
 );
 
 CREATE INDEX IF NOT EXISTS idx_article_pub_date ON article(pub_date);
+CREATE INDEX IF NOT EXISTS idx_article_category_pub ON article(category_id, pub_date DESC);
