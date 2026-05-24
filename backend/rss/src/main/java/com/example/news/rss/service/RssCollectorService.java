@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -38,6 +39,7 @@ public class RssCollectorService {
     private final ArticleRepository articleRepository;
     private final CategoryRepository categoryRepository;
     private final PushDispatchService pushDispatchService;
+    private final Clock clock;
 
     public void collectAll() {
         int totalNew = 0;
@@ -75,7 +77,7 @@ public class RssCollectorService {
 
         List<ArticleDraft> drafts = rssParser.parse(cat.getFeedUrl());
         int newCount = 0;
-        String now = ISO_LOCAL.format(ZonedDateTime.now());
+        String now = ISO_LOCAL.format(ZonedDateTime.now(clock));
 
         List<String> draftIds = drafts.stream()
             .map(ArticleDraft::articleId)
