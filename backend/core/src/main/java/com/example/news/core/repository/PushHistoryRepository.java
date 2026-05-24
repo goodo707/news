@@ -1,4 +1,7 @@
 package com.example.news.core.repository;
 
-public interface PushHistoryRepository {
+import com.example.news.core.domain.PushHistory;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface PushHistoryRepository extends JpaRepository<PushHistory, Long> {
 }
