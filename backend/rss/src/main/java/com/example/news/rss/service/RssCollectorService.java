@@ -4,6 +4,7 @@ import com.example.news.core.domain.Article;
 import com.example.news.core.domain.Category;
 import com.example.news.core.repository.ArticleRepository;
 import com.example.news.core.repository.CategoryRepository;
+import com.example.news.push.service.PushDispatchService;
 import com.example.news.rss.domain.RssCategory;
 import com.example.news.rss.parser.ArticleDraft;
 import com.example.news.rss.parser.RssParser;
@@ -34,6 +35,7 @@ public class RssCollectorService {
     private final RssParser rssParser;
     private final ArticleRepository articleRepository;
     private final CategoryRepository categoryRepository;
+    private final PushDispatchService pushDispatchService;
 
     public void collectAll() {
         int totalNew = 0;
@@ -78,7 +80,7 @@ public class RssCollectorService {
         for (ArticleDraft d : drafts) {
             if (d.articleId() == null) continue;
             if (articleRepository.existsById(d.articleId())) continue;
-            articleRepository.save(new Article(
+            Article saved = articleRepository.save(new Article(
                 d.articleId(),
                 d.title(),
                 d.link(),
@@ -87,6 +89,7 @@ public class RssCollectorService {
                 d.pubDate(),
                 now
             ));
+            pushDispatchService.dispatch(saved, cat.getCategoryName());
             newCount++;
         }
 
