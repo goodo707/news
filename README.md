@@ -106,6 +106,7 @@ CREATE INDEX IF NOT EXISTS idx_article_category_pub ON article(category_id, pub_
 - **user_category 복합 PK**: `(user_id, category_id)` 쌍이 자연 식별자
 - **push_log 비정규화**: 기사 1,000건 제한으로 article 삭제 후에도 이력 보존을 위해 `title`, `category`를 텍스트로 직접 저장 (JOIN 의존 X)
 - **`idx_article_pub_date` 인덱스**: cleanup 시 `findAllByOrderByPubDateAsc` 정렬을 인덱스 스캔으로 처리
+- **`idx_article_category_pub` 복합 인덱스**: 카테고리별 기사 조회 시 `WHERE category_id = ? ORDER BY pub_date DESC` 를 필터+정렬 하나의 인덱스 스캔으로 처리 (full table scan 회피)
 
 ### DB 파일 확인
 
