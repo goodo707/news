@@ -10,7 +10,6 @@ import com.example.news.rss.parser.ArticleDraft;
 import com.example.news.rss.parser.RssParser;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,7 +18,10 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -57,11 +59,9 @@ public class RssCollectorService {
         if (total <= MAX_ARTICLES) return;
 
         int toDelete = (int) (total - MAX_ARTICLES);
-        List<Article> oldest = articleRepository
-            .findAllByOrderByPubDateAsc(PageRequest.of(0, toDelete));
-        articleRepository.deleteAllInBatch(oldest);
+        int deleted = articleRepository.deleteOldestN(toDelete);
         log.info("[rss] cleanup: {}건 삭제 (전 {} → 후 {})",
-            oldest.size(), total, MAX_ARTICLES);
+            deleted, total, MAX_ARTICLES);
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
@@ -77,9 +77,18 @@ public class RssCollectorService {
         int newCount = 0;
         String now = ISO_LOCAL.format(ZonedDateTime.now());
 
+        List<String> draftIds = drafts.stream()
+            .map(ArticleDraft::articleId)
+            .filter(Objects::nonNull)
+            .toList();
+        Set<String> existing = draftIds.isEmpty()
+            ? Set.of()
+            : articleRepository.findAllById(draftIds).stream()
+                .map(Article::getArticleId)
+                .collect(Collectors.toSet());
+
         for (ArticleDraft d : drafts) {
-            if (d.articleId() == null) continue;
-            if (articleRepository.existsById(d.articleId())) continue;
+            if (d.articleId() == null || existing.contains(d.articleId())) continue;
             Article saved = articleRepository.save(new Article(
                 d.articleId(),
                 d.title(),

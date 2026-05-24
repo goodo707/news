@@ -1,5 +1,6 @@
 package com.example.news.controller;
 
+import com.example.news.core.domain.Article;
 import com.example.news.core.domain.ArticleRead;
 import com.example.news.core.repository.ArticleReadRepository;
 import com.example.news.core.repository.ArticleRepository;
@@ -36,11 +37,14 @@ public class ArticleController {
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "category not found: " + category))
             .getId();
 
-        Set<String> readIds = articleReadRepository.findAll().stream()
+        List<Article> articles = articleRepository.findByCategoryIdOrderByPubDateDesc(categoryId);
+        List<String> articleIds = articles.stream().map(Article::getArticleId).toList();
+
+        Set<String> readIds = articleReadRepository.findAllById(articleIds).stream()
             .map(ArticleRead::getArticleId)
             .collect(Collectors.toSet());
 
-        return articleRepository.findByCategoryIdOrderByPubDateDesc(categoryId).stream()
+        return articles.stream()
             .map(a -> new ArticleResponse(
                 a.getArticleId(), a.getTitle(), a.getLink(), a.getAuthor(),
                 a.getPubDate(), readIds.contains(a.getArticleId())
