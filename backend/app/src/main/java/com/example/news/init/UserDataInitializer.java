@@ -26,7 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class UserDataInitializer implements ApplicationRunner {
 
-    private static final String EXCEL_FILE = "사전과제_사용자데이터가상.xlsx";
+    private static final String EXCEL_FILE = "데이터.xlsx";
 
     private final UserRepository userRepository;
     private final CategoryRepository categoryRepository;
