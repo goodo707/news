@@ -89,7 +89,11 @@ public class RssCollectorService {
                 d.pubDate(),
                 now
             ));
-            pushDispatchService.dispatch(saved, cat.getCategoryName());
+            try {
+                pushDispatchService.dispatch(saved, cat.getCategoryName());
+            } catch (Exception e) {
+                log.error("[push] 발송 실패: {}", saved.getArticleId(), e);
+            }
             newCount++;
         }
 
