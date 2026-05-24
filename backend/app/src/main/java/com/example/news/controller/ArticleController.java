@@ -10,6 +10,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.Clock;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -19,9 +22,13 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ArticleController {
 
+    private static final DateTimeFormatter FORMATTER =
+        DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
+
     private final ArticleRepository articleRepository;
     private final ArticleReadRepository articleReadRepository;
     private final CategoryRepository categoryRepository;
+    private final Clock clock;
 
     @GetMapping
     public List<ArticleResponse> list(@RequestParam String category) {
@@ -32,12 +39,21 @@ public class ArticleController {
         Set<String> readIds = articleReadRepository.findAll().stream()
             .map(ArticleRead::getArticleId)
             .collect(Collectors.toSet());
-ㅊ
+
         return articleRepository.findByCategoryIdOrderByPubDateDesc(categoryId).stream()
             .map(a -> new ArticleResponse(
                 a.getArticleId(), a.getTitle(), a.getLink(), a.getAuthor(),
                 a.getPubDate(), readIds.contains(a.getArticleId())
             ))
             .toList();
+    }
+
+    @PostMapping("/{articleId}/read")
+    public void markRead(@PathVariable String articleId) {
+        if (!articleRepository.existsById(articleId)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "article not found: " + articleId);
+        }
+        String now = LocalDateTime.now(clock).format(FORMATTER);
+        articleReadRepository.save(new ArticleRead(articleId, now));
     }
 }
