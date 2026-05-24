@@ -19,5 +19,6 @@ public class RssScheduler {
     )
     public void collectRss() {
         rssCollectorService.collectAll();
+        rssCollectorService.cleanupOldArticles();
     }
 }

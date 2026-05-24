@@ -50,8 +50,6 @@ public class RssCollectorService {
             }
         }
         log.info("[rss] 전체 수집 완료: 신규 {}건", totalNew);
-
-        cleanupOldArticles();
     }
 
     @Transactional

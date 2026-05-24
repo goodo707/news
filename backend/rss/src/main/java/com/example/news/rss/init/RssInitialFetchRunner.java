@@ -20,5 +20,6 @@ public class RssInitialFetchRunner implements ApplicationRunner {
     public void run(ApplicationArguments args) {
         log.info("[rss] 초기 수집 시작");
         rssCollectorService.collectAll();
+        rssCollectorService.cleanupOldArticles();
     }
 }
