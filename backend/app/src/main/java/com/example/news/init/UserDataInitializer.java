@@ -43,11 +43,11 @@ public class UserDataInitializer implements ApplicationRunner {
     public void run(ApplicationArguments args) throws Exception {
         // 앱 재시작 시 Excel 을 다시 읽지 않도록 가드 — DB 가 SSOT
         if (userRepository.count() > 0) {
-            log.info("사용자 데이터가 이미 존재합니다. 초기화를 건너뜁니다.");
+            log.info("[init] 사용자 데이터가 이미 존재합니다. 초기화를 건너뜁니다.");
             return;
         }
 
-        log.info("사용자 데이터 초기화를 시작합니다.");
+        log.info("[init] 사용자 데이터 초기화를 시작합니다.");
 
         ClassPathResource resource = new ClassPathResource(EXCEL_FILE);
         try (Workbook workbook = new XSSFWorkbook(resource.getInputStream())) {
@@ -92,6 +92,6 @@ public class UserDataInitializer implements ApplicationRunner {
             }
         }
 
-        log.info("사용자 데이터 초기화 완료: {}명", userRepository.count());
+        log.info("[init] 사용자 데이터 초기화 완료: {}명", userRepository.count());
     }
 }
