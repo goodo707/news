@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidateTag } from "next/cache";
+import { updateTag } from "next/cache";
 import { apiClient } from "@/lib/api/client";
 
 export async function markArticleRead(
@@ -11,6 +11,6 @@ export async function markArticleRead(
     params: { path: { articleId } },
   });
   // 해당 카테고리의 articles fetch 캐시만 정확히 invalidate.
-  // revalidatePath 는 한국어 path 매칭이 불안정해 tag 방식 사용.
-  revalidateTag(`articles:${categoryName}`);
+  // Next 16: Server Action 안에서는 updateTag 사용 — 즉시 만료 + read-your-own-writes.
+  updateTag(`articles:${categoryName}`);
 }

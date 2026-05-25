@@ -106,13 +106,16 @@ news/
 
 ### 핵심 포인트
 
-1. **ISR + SSG** — 모든 페이지 `revalidate=600` + `generateStaticParams` 로 빌드 시점 정적 prerender. 백엔드 RSS 주기와 정합한 3-layer 캐시 일관성. SEO 친화적.
+1. **ISR + SSG** — 홈 페이지와 카테고리 페이지는 정적 렌더링을 기본으로 하고,
+   카테고리 동적 경로는 `generateStaticParams`로 빌드 시 사전 생성.
+   `revalidate=600`을 적용해 RSS 수집 주기와 같은 10분 단위의 재검증 기준을 두었음.
+   단, ISR 재생성은 캐시 만료 이후 해당 페이지 요청이 들어올 때 수행
 
 2. **타입 안전 API** — 백엔드 DTO 의 `@NotNull` → OpenAPI `required` → `pnpm gen:types` 로 TS 타입 자동 생성. `openapi-fetch` 가 컴파일 타임에 URL/파라미터 오류 검출.
 
-3. **WCAG 2.1 / KWCAG 충족** — Skip link, 시멘틱 HTML, ARIA(`aria-label`/`aria-current`), `focus-visible` ring, 색 대비 ≈ 11:1 (AAA), 스크린리더 친화 `sr-only` 텍스트.
+3. **웹접근성 준수** — Skip link, 시멘틱 HTML, ARIA(`aria-label`/`aria-current`), `focus-visible` ring, 색 대비 ≈ 11:1 (AAA), 스크린리더 친화 `sr-only` 텍스트.
 
-4. **읽음 처리** — 클릭 즉시 `useState` optimistic UI + Server Action(`revalidateTag`)로 카테고리별 cache 정밀 무효화. 새로고침 후에도 isRead 유지.
+4. **읽음 처리** — 클릭 즉시 `useState` optimistic UI + Server Action(`updateTag`)로 카테고리별 cache 정밀 무효화. 새로고침 후에도 isRead 유지.
 
 ---
 
@@ -120,54 +123,62 @@ news/
 
 ### 동작 흐름
 
-```mermaid
-flowchart TD
-    Start([RssScheduler<br/>fixedDelay 10분 · 단일 진입점]):::trigger --> Collect[RssCollectorService.collectAll]
-    Collect --> CatLoop{{카테고리 5개 루프<br/>정치 · 북한 · 경제 · 산업 · 사회<br/>try-catch 부분 실패 격리}}
-
-    CatLoop -->|각 카테고리| Parse["① RSS 파싱<br/>RssParser.parse<br/>connect 5s · read 10s"]:::m1
-    Parse --> Dedup["중복 제거<br/>findAllById 배치 lookup"]
-    Dedup --> NewLoop{{신규 draft 루프}}
-
-    NewLoop -->|신규만| Save[Article 저장<br/>JPA batch_size 50]
-    Save --> Dispatch[PushDispatchService.dispatch<br/>오케스트레이터]
-    Dispatch --> Filter["② 사용자 필터링<br/>UserFilterService<br/>카테고리 구독 ∩ DND"]:::m2
-    Filter --> TgtLoop{{대상 사용자 루프}}
-    TgtLoop -->|대상자마다| Send["③ 푸시 발송 시뮬<br/>sendAPNS / sendFCM"]:::m3
-    Send --> Log["④ 이력 저장<br/>PushLogRecorder.record<br/>success/fail 모두 기록"]:::m4
-
-    CatLoop -.cycle 끝.-> Cleanup[cleanupOldArticles<br/>1,000건 초과 시 오래된 순 삭제]
-
-    classDef trigger fill:#fff7ed,stroke:#fb923c
-    classDef m1 fill:#eff6ff,stroke:#3b82f6
-    classDef m2 fill:#ecfdf5,stroke:#10b981
-    classDef m3 fill:#fef3c7,stroke:#f59e0b
-    classDef m4 fill:#fce7f3,stroke:#ec4899
+```
+RssScheduler (10분 fixedDelay)
+   │
+   ▼
+RssCollectorService.collectAll()
+   │
+   └─▶ collectOne(카테고리 5개 each, try-catch 격리)
+          │
+          ① RSS 수집 (Rome) — fetch + 중복 제거 + INSERT
+          │
+          └─▶ 신규 article 1건마다
+                 │
+                 ▼
+                 PushDispatchService.dispatch(article)
+                    ├─ ② 사용자 필터링  — 카테고리 구독자 ∩ DND 미해당
+                    ├─ ③ 푸시 발송      — APNS / FCM 시뮬 (success / fail 무작위)
+                    └─ ④ 이력 저장      — push_log INSERT (성공 · 실패 모두)
+   │
+   ▼ (cycle 끝)
+cleanupOldArticles — article 1,000건 초과 시 오래된 순 삭제
 ```
 
-**단계별 요약** — 발표 시 다이어그램 위에서 아래로 읽기:
+### 각 단계 구체 구현
 
-| # | 단계 | 위치 / 모듈 | 핵심 동작 |
-| --- | --- | --- | --- |
-| 0 | 트리거 | `RssScheduler` | 10분 `fixedDelay` 로 cycle 시작 (단일 진입점) |
-| 1 | RSS 파싱 | `rss/parser/RssParser` | 5개 피드 HTTP fetch (connect 5s / read 10s) |
-| 2 | 중복 제거 | `RssCollectorService` | `findAllById(draftIds)` 1회 조회 + Set 매칭 (N+1 회피) |
-| 3 | Article 저장 | `core/ArticleRepository` | JPA `batch_size=50` 로 묶어서 INSERT |
-| 4 | 푸시 dispatch | `push/dispatcher/PushDispatchService` | 신규 article 마다 ②③④ 호출 흐름 제어 |
-| 5 | 사용자 필터 | `push/filter/UserFilterService` + `DndChecker` | 카테고리 구독자 ∩ DND 미해당 |
-| 6 | 푸시 발송 | `push/notification/PushNotificationService` | APNS/FCM 시뮬 — `success`/`fail` 무작위 반환 |
-| 7 | 이력 저장 | `push/log/PushLogRecorder` | 결과를 `push_log` 에 비정규화 INSERT |
-| 8 | cleanup | `RssCollectorService` | 카테고리 cycle 종료 후 1,000건 초과 분 삭제 |
+#### ① RSS 수집 — [`RssCollectorService.collectOne`](backend/rss/src/main/java/com/example/news/rss/service/RssCollectorService.java)
 
-### 4 핵심 기능 모듈 (요구사항 §4)
+- **Rome 라이브러리** 로 RSS XML → `ArticleDraft` 변환 ([`RssParser`](backend/rss/src/main/java/com/example/news/rss/parser/RssParser.java)). connect 5초 / read 10초 timeout 명시.
+- **부분 실패 격리**: 5개 카테고리 each try-catch — 한 피드 fetch / 파싱 실패가 다른 피드 INSERT 에 영향 없음.
+- **N+1 회피**: `findAllById(draftIds)` 1쿼리로 기존 `article_id` 일괄 조회 → in-memory `Set` 매칭으로 중복 제거 (§성능1 참고).
+- **스케줄링**: [`RssScheduler`](backend/rss/src/main/java/com/example/news/rss/scheduler/RssScheduler.java) `@ConditionalOnProperty` 로 활성화 제어. 부팅 시 `RssInitialFetchRunner` 1회 + 10분 `fixedDelay` 주기.
 
-| #   | 모듈           | 위치                 | 책임                                        |
-| --- | -------------- | -------------------- | ------------------------------------------- |
-| ①   | RSS 수집       | Gradle `rss` 모듈    | 10분 주기 수집, 중복 제거, 1000건 cleanup   |
-| ②   | 사용자 필터링  | `push/filter/`       | 카테고리 구독 + DND 시간대 필터링           |
-| ③   | 푸시 발송      | `push/notification/` | 과제 제공 인터페이스 + 시뮬 구현체 (수정 X) |
-| ④   | 발송 이력 저장 | `push/log/`          | 비정규화된 `push_log` 저장                  |
-| ─   | 오케스트레이터 | `push/dispatcher/`   | ②③④ 호출 흐름 제어                          |
+#### ② 사용자 필터링 — [`UserFilterService`](backend/push/src/main/java/com/example/news/push/filter/UserFilterService.java) + [`DndChecker`](backend/push/src/main/java/com/example/news/push/filter/DndChecker.java)
+
+- **카테고리 매칭**: `userCategoryRepository.findById_CategoryId(article.categoryId)` → 해당 카테고리 구독자 `user_id` 리스트 → `userRepository.findAllById(...)` 로 사용자 객체 일괄 로드.
+- **DND 판정** ([정책 표 참고](#dnd-방해금지-시간-룰)):
+  - `dndStart == null && dndEnd == null` → 미설정 (Excel `"-"`) → 항상 발송 허용
+  - `start <= end` → 일반 구간 `[start, end]` — `!now.isBefore(start) && !now.isAfter(end)` 시 차단
+  - `start > end` → 자정 넘김 `[start, 24:00) ∪ [00:00, end]` — `!now.isBefore(start) || !now.isAfter(end)` 시 차단
+- 두 조건 모두 만족 (구독자 AND DND 미해당) 하는 사용자만 dispatch 대상으로 반환.
+
+#### ③ 푸시 발송 — [`PushDispatchService`](backend/push/src/main/java/com/example/news/push/dispatcher/PushDispatchService.java) → [`PushNotificationServiceImpl`](backend/push/src/main/java/com/example/news/push/notification/PushNotificationServiceImpl.java)
+
+- 사용자 `push_type` 으로 발송 메서드 분기:
+  `switch { case "APNS" → sendAPNS; case "FCM" → sendFCM; default → "fail" }`
+- 인터페이스 / 시뮬 구현체는 **요구사항 §4-3 의 코드를 그대로 사용** — 실제 APNS / FCM 호출 안 함, `random.nextBoolean()` 으로 `"success"` / `"fail"` 무작위 반환.
+- Excel `push_type` 컬럼은 `"APNs"` / `"FCM"` 인데, `UserDataInitializer` 가 `.toUpperCase()` 로 `"APNS"` / `"FCM"` 정규화 후 저장 → switch 일관성 보장.
+
+#### ④ 발송 이력 저장 — [`PushLogRecorder`](backend/push/src/main/java/com/example/news/push/log/PushLogRecorder.java)
+
+- 1발송 = 1행. **요구사항 §4-4 의 6필드 모두 저장**: `device_id`, `push_type`, `article_id`, `title`, `category`, `sent_at`, `status`.
+- **성공 · 실패 모두 기록** — 운영 시 에러율 / 대상자 추이 분석 가능.
+- **`title`, `category` 를 비정규화하여 텍스트로 직접 저장** — article 이 1,000건 cleanup 으로 삭제돼도 이력은 보존되어야 하기 때문. push_log 단독 조회 가능, article 과 JOIN 불필요.
+
+#### 오케스트레이션 — article-by-article dispatch
+
+신규 article INSERT 직후 같은 루프 안에서 즉시 `pushDispatchService.dispatch(...)` 호출. `dispatch` 자체에 `@Transactional` 이 있어 **push 실패가 article INSERT 를 롤백시키지 않음**. 한 article 의 push 발송이 실패해도 다음 article 처리 계속 진행.
 
 ### DND (방해금지) 시간 룰
 
@@ -195,9 +206,8 @@ flowchart TD
 ### Spring Boot 4 부팅 — `schema.sql` 3종 세트
 
 ```properties
-spring.jpa.hibernate.ddl-auto=none           # Hibernate 자동 DDL 끔
-spring.sql.init.mode=always                  # schema.sql 강제 실행
-spring.jpa.defer-datasource-initialization=true   # JPA 가 schema.sql 실행을 책임지도록 활성화
+spring.jpa.hibernate.ddl-auto=none
+spring.sql.init.mode=always
 ```
 
 JPA + schema.sql 조합에서 부팅 순서 보장. 하나라도 빠지면 `no such table` 에러.
@@ -206,7 +216,7 @@ JPA + schema.sql 조합에서 부팅 순서 보장. 하나라도 빠지면 `no s
 
 ## 성능 / 캐시 — 의사결정과 트레이드오프
 
-각 항목 모두 **"고려한 옵션 → 트레이드오프 → 최종 선택과 근거"** 흐름. 발표용 핵심 어필 섹션.
+각 항목 모두 **"고려한 옵션 → 트레이드오프 → 최종 선택과 근거"** 흐름.
 
 ### 1. RSS 신규 기사 중복 체크 — N+1 회피
 
@@ -218,7 +228,7 @@ JPA + schema.sql 조합에서 부팅 순서 보장. 하나라도 빠지면 `no s
 | **(B) `findAllById(draftIds)` 1회 + Set 매칭** | **1**     | **쿼리 1회, in-memory 비교**. IN 절 한계는 30개 규모에선 무의미            |
 | (C) DB UPSERT (`INSERT OR IGNORE`)             | 1 (write) | 가장 적은 라운드트립. 단 **신규/기존 구분이 사라져 푸시 트리거 분기 불가** |
 
-→ **B 선택.** 푸시는 "신규 기사" 만 대상이라 INSERT 결과 구분이 필수. C 의 UPSERT 는 이 분기를 잃음. (`8929f6b`)
+→ 푸시는 "신규 기사" 만 대상이라 INSERT 결과 구분이 필수.
 
 ### 2. article 1,000건 초과 cleanup — 엔티티 로드 회피
 
@@ -226,9 +236,9 @@ JPA + schema.sql 조합에서 부팅 순서 보장. 하나라도 빠지면 `no s
 | --------------------------------------------------------------- | ------------------- | ------------------------------------------------------------------------------------ |
 | (A) `findAllByOrderByPubDateAsc(Pageable)` + `deleteAllInBatch` | SELECT 1 + DELETE 1 | 삭제 대상 엔티티를 PersistenceContext 에 일단 로드                                   |
 | (B) native `DELETE … WHERE article_id IN (SELECT … LIMIT n)`    | DELETE 1            | 엔티티 로드 회피. 단 **DB 종속(`LIMIT` 문법)** + CLAUDE.md JPA 우선순위 위배         |
-| **(C) 다시 A 패턴 — derived + Pageable**                        | SELECT 1 + DELETE 1 | A 와 동일. cleanup 빈도(10분 1회) × 규모(< 30 row) 가 native 의 마이크로 이득을 상쇄 |
+| **(C) derived + Pageable**                                      | SELECT 1 + DELETE 1 | A 와 동일. cleanup 빈도(10분 1회) × 규모(< 30 row) 가 native 의 마이크로 이득을 상쇄 |
 
-→ B 로 갔다가 (`b9a957f`) **C 로 회귀** (`c00ca79`). JPA 우선순위 `derived > JPQL > native` 원칙 + 본 과제 규모에서 native 가 과한 추상화 비용이라 판단.
+→ JPA 우선순위 `derived > JPQL > native` 원칙 준수
 
 ### 3. article 인덱스 전략
 
@@ -238,7 +248,19 @@ JPA + schema.sql 조합에서 부팅 순서 보장. 하나라도 빠지면 `no s
 | (B) `(category_id, pub_date DESC)` 복합 | 카테고리별 최신순 | cleanup 정렬 인덱스 미사용                          |
 | **(C) 둘 다**                           | A + B             | 약간의 write 비용 ↑, **두 핫패스 모두 인덱스 스캔** |
 
-→ **C 선택** (`f0bed36`). write 가 10분에 ~30 row 라 추가 인덱스 비용 미미. cleanup 과 카테고리 조회 둘 다 핫패스라 양쪽 인덱스 보유가 합리적.
+→ write 가 10분에 ~30 row 라 추가 인덱스 비용 미미. cleanup 과 카테고리 조회 둘 다 핫패스라 양쪽 인덱스 보유가 합리적.
+
+#### 실측 — EXPLAIN QUERY PLAN + wall-clock (1000회 반복, 756건 article)
+
+| 케이스                          | QUERY PLAN                                                            | Run Time (real) | 비율       |
+| ------------------------------- | --------------------------------------------------------------------- | --------------- | ---------- |
+| **두 인덱스 (현재 운영)**       | `SEARCH article USING INDEX idx_article_category_pub (category_id=?)` | **3.4 ms**      | **1×**     |
+| `idx_article_category_pub` 제거 | `SCAN article USING INDEX idx_article_pub_date`                       | 26.2 ms         | 7.7× 느림  |
+| 인덱스 전무                     | `SCAN article` + `USE TEMP B-TREE FOR ORDER BY`                       | 43.9 ms         | 12.9× 느림 |
+
+![인덱스 효과 EXPLAIN + 실측](screenshots/perf/index-explain.png)
+
+> 테스트 방법: DB 복사본에서 인덱스를 단계적으로 DROP 후 같은 카테고리 조회 쿼리 1000회 반복, `sqlite3 .timer on` 으로 wall-clock 측정.
 
 ### 4. 카테고리 페이지 응답에 `isRead` 채우기 — 또 다른 N+1
 
@@ -250,7 +272,15 @@ JPA + schema.sql 조합에서 부팅 순서 보장. 하나라도 빠지면 `no s
 | (B) `articleReadRepository.findAll()` → Set  | 1       | **전체 읽음 데이터 로드** — 누적 시 메모리 압박    |
 | **(C) `findAllById(articleIds)` → Set 매칭** | **1**   | 해당 카테고리 articleId 만 정확히 IN — 메모리 효율 |
 
-→ **C 선택** (`8929f6b`). 단일 사용자 가정이라 article_read 가 작아도, 패턴 자체가 **스케일 가능한 N+1 회피의 정석**.
+→ 단일 사용자 가정이라 article_read 가 작아도, 패턴 자체가 **스케일 가능한 N+1 회피의 정석**.
+
+#### 실측 — `GET /articles?category=정치` 발행 SQL
+
+236건 응답에 **단 3 쿼리** (카테고리 lookup + article 목록 + article_read IN 1회). N+1 (A안) 이었다면 1 + 1 + 236 = **238 쿼리** (약 79배 차이).
+
+![GET /articles 발행 SQL — 3건](screenshots/perf/n1-avoidance.png)
+
+> 테스트 방법: `spring.jpa.show-sql=true` 로 부팅 후 `curl /articles?category=정치` 1회 호출, Hibernate 콘솔 로그에서 발행 SQL 카운트 (IN 절은 가독성 위해 자동 압축).
 
 ### 5. `@Scheduled` — `fixedRate` vs `fixedDelay`
 
@@ -259,30 +289,22 @@ JPA + schema.sql 조합에서 부팅 순서 보장. 하나라도 빠지면 `no s
 | (A) `fixedRate`      | 시작 시각 기준 10분마다 강제 실행 | 한 cycle 이 10분을 넘기면 **누락 catch-up 동시 발생** → 외부 RSS 서버에 burst |
 | **(B) `fixedDelay`** | 이전 cycle 종료 후 10분 대기      | catch-up 없음 · 외부 서버에 정중 · pool size 변동에도 단일 실행 보장          |
 
-→ **B 선택** (`4473259`). 외부 HTTP fetch + 푸시 dispatch 가 포함되어 cycle 시간 변동성이 있음.
+→ 외부 HTTP fetch + 푸시 dispatch 가 포함되어 cycle 시간 변동성이 있음.
 
-### 6. Hibernate `batch_size` — 다건 INSERT 라운드트립 축소
+### 6. Hibernate `batch_size` — 검토 후 제거
 
-푸시 발송 시 `push_log` 는 사용자당 1행 INSERT → 한 기사로 최대 100 INSERT.
+푸시 발송 시 `push_log` 는 사용자당 1행 INSERT (한 기사로 최대 100건이 같은 트랜잭션). 처음엔 `batch_size=50` 으로 묶어 성능 이득을 기대했지만 실측 효과가 없어 옵션을 제거하고 **단건 INSERT** 로 결정했습니다.
 
-| 옵션                                           | 효과                                                |
-| ---------------------------------------------- | --------------------------------------------------- |
-| (A) 단건 INSERT (Hibernate 기본)               | N round-trip                                        |
-| **(B) `batch_size=50` + `order_inserts=true`** | 같은 트랜잭션 INSERT 를 JDBC `executeBatch` 로 묶음 |
+| 케이스                 | 76건 push 총 소요 | 1건당   |
+| ---------------------- | ----------------- | ------- |
+| batch_size=50          | 559 ms            | 7.36 ms |
+| **단건 INSERT (현재)** | 545 ms            | 7.17 ms |
 
-→ **B 선택** (`1304fa1`). **추가 코드 0, properties 5줄로 끝**.
+→ SQLite (in-process) 는 JDBC 호출이 함수 호출 수준이라 묶을 라운드트립이 없음. PG / MySQL 같은 원격 DB 로 마이그레이션 시점에 다시 도입 검토가 적절.
 
-**실측** — `PushLog` 100건 INSERT 통합 테스트 (`BatchOnPerfTest`, `BatchOffPerfTest`):
+![batch_size 실측](screenshots/perf/batch-size.png)
 
-| 시나리오 | 소요 시간 |
-|---|---|
-| `batch_size=50` (현재 운영) | **79ms** |
-| `batch_size=0` (비교용) | 195ms |
-
-→ **약 2.5배 빠름**. 재현:
-```bash
-./gradlew :app:test --tests "*BatchOnPerfTest" --tests "*BatchOffPerfTest" -i 2>&1 | grep PERF
-```
+> 테스트 방법: `batch_size=50` / `batch_size=0` 두 properties 로 각각 부팅 → 첫 RSS cycle 의 push wall-clock 비교 (동일 article 76건 기준).
 
 ### 7. 읽음 처리 후 Next.js ISR 캐시 무효화 — 폭/정확도
 
@@ -292,9 +314,11 @@ ISR 캐시(`revalidate=600`) 가 살아있는 동안엔 새로고침 후 `isRead
 | ------------------------------------------------ | ------------------------- | ---------------------------------------------- |
 | (A) `revalidatePath("/category/[name]", "page")` | 카테고리 페이지 5장 전부  | 클릭과 무관한 다른 카테고리 캐시까지 같이 폐기 |
 | (B) `revalidatePath('/category/' + name)`        | 클릭한 카테고리 1장       | **한국어 path("/category/정치") 매칭 불안정**  |
-| **(C) `revalidateTag('articles:' + name)`**      | 해당 카테고리 fetch 1건만 | `next.tags` 선언 필요. **가장 정밀**           |
+| **(C) `updateTag('articles:' + name)`**          | 해당 카테고리 fetch 1건만 | `next.tags` 선언 필요. **가장 정밀**           |
 
-→ A → B → **C 로 수렴** (`db5fc42` → `b2094da` → 현 `lib/actions.ts`). path 매칭 실패 케이스를 발견한 뒤 fetch tag 방식으로 우회.
+→ path 매칭 실패 케이스를 발견한 뒤 fetch tag 방식으로 우회.
+
+※ Next.js 16부터 `revalidateTag(tag, profile)` 2-arg 필수. Server Action 안에서는 즉시 만료 + read-your-own-writes semantics를 보장하는 신규 API `updateTag` 사용.
 
 ### 8. 프론트엔드 렌더링 전략
 
@@ -305,7 +329,7 @@ ISR 캐시(`revalidate=600`) 가 살아있는 동안엔 새로고침 후 `isRead
 | **(C) ISR (`revalidate=600`)** | **빠름 (정적 HTML)** | 10분 stale-while-revalidate | 높음 | 10분당 1회 백엔드 호출 |
 | (D) full SSG                   | 가장 빠름            | 빌드 시점 고정              | 높음 | RSS 갱신마다 재빌드    |
 
-→ **C 선택.** 백엔드 RSS 스케줄러가 정확히 10분 주기 → `revalidate=600` 으로 **캐시 만료를 데이터 갱신 주기에 정확히 align**. SEO · 성능 · 운영비용의 최적 균형점.
+→ RSS 수집 주기와 동일한 재검증 간격을 설정해 최대 stale 시간을 제한.
 
 ---
 
@@ -334,14 +358,6 @@ SELECT * FROM category;
 -- 일부 확인
 SELECT * FROM users LIMIT 5;
 
--- push_type 분포 (APNS / FCM)
-SELECT push_type, COUNT(*) FROM users GROUP BY push_type;
-
--- DND 설정 여부
-SELECT
-  SUM(CASE WHEN dnd_start IS NULL THEN 1 ELSE 0 END) AS dnd_off,
-  SUM(CASE WHEN dnd_start IS NOT NULL THEN 1 ELSE 0 END) AS dnd_on
-FROM users;
 ```
 
 #### `user_category` — 사용자-카테고리 다대다 매핑
@@ -380,8 +396,6 @@ SELECT a.title, ar.read_at FROM article_read ar
   JOIN article a ON ar.article_id = a.article_id
   ORDER BY ar.read_at DESC;
 
--- 총 읽음 처리 건수
-SELECT COUNT(*) FROM article_read;
 ```
 
 #### `push_log` — 푸시 발송 이력
@@ -391,17 +405,8 @@ SELECT COUNT(*) FROM article_read;
 SELECT push_type, status, COUNT(*) FROM push_log
   GROUP BY push_type, status;
 
--- 카테고리 × 발송 결과
-SELECT category, push_type, status, COUNT(*) FROM push_log
-  GROUP BY category, push_type, status
-  ORDER BY category, push_type, status;
-
 -- 최근 발송 10건
 SELECT device_id, push_type, category, status, sent_at FROM push_log
   ORDER BY sent_at DESC LIMIT 10;
 
--- 특정 사용자(device_id) 의 수신 이력
-SELECT category, status, sent_at FROM push_log
-  WHERE device_id = 'DEVICE_0001'
-  ORDER BY sent_at DESC;
 ```
