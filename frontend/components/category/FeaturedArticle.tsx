@@ -1,3 +1,5 @@
+"use client";
+
 import { Badge } from "@/components/ui/badge";
 import type { Article } from "@/lib/types/domain";
 
@@ -13,6 +15,8 @@ export function FeaturedArticle({ article }: Props) {
       </Badge>
       <a
         href={article.link}
+        target="_blank"
+        rel="noopener noreferrer"
         className="mt-2.5 text-2xl font-black leading-tight tracking-tight outline-none hover:text-brand focus-visible:text-brand focus-visible:ring-2 focus-visible:ring-brand"
       >
         {article.title}

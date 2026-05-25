@@ -1,3 +1,5 @@
+"use client";
+
 import type { Article } from "@/lib/types/domain";
 
 interface Props {
@@ -7,10 +9,17 @@ interface Props {
 export function ArticleListItem({ article }: Props) {
   const isRead = article.isRead;
 
+  const handleClick = (_e: React.MouseEvent<HTMLAnchorElement>) => {
+    // Task 13에서 읽음 처리 POST 추가
+  };
+
   return (
     <li className="border-b border-border">
       <a
         href={article.link}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={handleClick}
         className={`block py-3.5 outline-none hover:text-brand focus-visible:text-brand focus-visible:ring-2 focus-visible:ring-brand ${
           isRead ? "opacity-55" : ""
         }`}
