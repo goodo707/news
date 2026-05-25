@@ -1,4 +1,6 @@
 package com.example.news.dto;
 
-public record CategoryResponse(Long id, String name) {
+import jakarta.validation.constraints.NotNull;
+
+public record CategoryResponse(@NotNull Long id, @NotNull String name) {
 }
