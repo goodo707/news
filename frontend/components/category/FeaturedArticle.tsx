@@ -31,7 +31,7 @@ export function FeaturedArticle({ article }: Props) {
         <span className="text-neutral-300">·</span>
         <time dateTime={article.pubDate}>{article.pubDate}</time>
         {isRead && (
-          <span className="rounded-sm bg-muted px-1.5 py-0.5 text-[0.625rem]">
+          <span className="rounded-sm bg-muted px-1.5 py-0.5 text-xs">
             <span className="sr-only">상태: </span>읽음
           </span>
         )}
