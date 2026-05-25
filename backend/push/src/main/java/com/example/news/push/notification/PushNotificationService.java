@@ -1,4 +1,4 @@
-package com.example.news.push.service;
+package com.example.news.push.notification;
 
 /** PushNotificationService 인터페이스 */
 public interface PushNotificationService {

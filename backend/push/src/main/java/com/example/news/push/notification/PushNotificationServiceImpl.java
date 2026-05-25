@@ -1,4 +1,4 @@
-package com.example.news.push.service;
+package com.example.news.push.notification;
 
 import org.springframework.stereotype.Service;
 

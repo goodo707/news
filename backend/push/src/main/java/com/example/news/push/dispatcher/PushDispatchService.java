@@ -1,10 +1,10 @@
-package com.example.news.push.service;
+package com.example.news.push.dispatcher;
 
 import com.example.news.core.domain.Article;
-import com.example.news.core.domain.PushHistory;
 import com.example.news.core.domain.User;
-import com.example.news.core.repository.PushHistoryRepository;
 import com.example.news.push.filter.UserFilterService;
+import com.example.news.push.history.PushHistoryRecorder;
+import com.example.news.push.notification.PushNotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -25,7 +25,7 @@ public class PushDispatchService {
 
     private final UserFilterService userFilterService;
     private final PushNotificationService pushNotificationService;
-    private final PushHistoryRepository pushHistoryRepository;
+    private final PushHistoryRecorder pushHistoryRecorder;
     private final Clock clock;
 
     @Transactional
@@ -38,11 +38,7 @@ public class PushDispatchService {
 
         for (User user : targets) {
             String status = send(user, article);
-            pushHistoryRepository.save(new PushHistory(
-                user.getDeviceId(), user.getPushType(),
-                article.getArticleId(), article.getTitle(),
-                categoryName, sentAt, status
-            ));
+            pushHistoryRecorder.record(user, article, categoryName, status, sentAt);
             if ("success".equals(status)) success++; else fail++;
         }
 

@@ -4,7 +4,7 @@ import com.example.news.core.domain.Article;
 import com.example.news.core.domain.Category;
 import com.example.news.core.repository.ArticleRepository;
 import com.example.news.core.repository.CategoryRepository;
-import com.example.news.push.service.PushDispatchService;
+import com.example.news.push.dispatcher.PushDispatchService;
 import com.example.news.rss.domain.RssCategory;
 import com.example.news.rss.parser.ArticleDraft;
 import com.example.news.rss.parser.RssParser;
