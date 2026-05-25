@@ -1,30 +1,31 @@
 package com.example.news.rss.parser;
 
+import com.example.news.core.util.TimeFormats;
 import com.rometools.rome.feed.synd.SyndEntry;
 import com.rometools.rome.feed.synd.SyndFeed;
 import com.rometools.rome.io.SyndFeedInput;
 import com.rometools.rome.io.XmlReader;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.net.URI;
 import java.net.URLConnection;
-import java.time.Instant;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
+import java.time.Clock;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class RssParser {
 
     private static final int CONNECT_TIMEOUT_MS = 5_000;
     private static final int READ_TIMEOUT_MS = 10_000;
-    private static final DateTimeFormatter ISO_LOCAL = DateTimeFormatter
-        .ofPattern("yyyy-MM-dd'T'HH:mm:ss")
-        .withZone(ZoneId.of("Asia/Seoul"));
+
+    private final Clock clock;
 
     public List<ArticleDraft> parse(String feedUrl) {
         try {
@@ -56,16 +57,16 @@ public class RssParser {
             return Optional.empty();
         }
 
-        String pubDate = entry.getPublishedDate() != null
-            ? ISO_LOCAL.format(entry.getPublishedDate().toInstant())
-            : ISO_LOCAL.format(Instant.now());
+        LocalDateTime publishedAt = entry.getPublishedDate() != null
+            ? LocalDateTime.ofInstant(entry.getPublishedDate().toInstant(), clock.getZone())
+            : LocalDateTime.now(clock);
 
         return Optional.of(new ArticleDraft(
             articleId.get(),
             entry.getTitle(),
             link,
             entry.getAuthor(),
-            pubDate
+            publishedAt.format(TimeFormats.ISO_LOCAL_DATE_TIME)
         ));
     }
 

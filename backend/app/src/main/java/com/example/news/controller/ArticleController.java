@@ -5,6 +5,7 @@ import com.example.news.core.domain.ArticleRead;
 import com.example.news.core.repository.ArticleReadRepository;
 import com.example.news.core.repository.ArticleRepository;
 import com.example.news.core.repository.CategoryRepository;
+import com.example.news.core.util.TimeFormats;
 import com.example.news.dto.ArticleResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -13,7 +14,6 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Clock;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -22,9 +22,6 @@ import java.util.stream.Collectors;
 @RequestMapping("/articles")
 @RequiredArgsConstructor
 public class ArticleController {
-
-    private static final DateTimeFormatter FORMATTER =
-        DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
 
     private final ArticleRepository articleRepository;
     private final ArticleReadRepository articleReadRepository;
@@ -60,7 +57,7 @@ public class ArticleController {
         if (!articleRepository.existsById(articleId)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "article not found: " + articleId);
         }
-        String now = LocalDateTime.now(clock).format(FORMATTER);
+        String now = LocalDateTime.now(clock).format(TimeFormats.ISO_LOCAL_DATE_TIME);
         articleReadRepository.save(new ArticleRead(articleId, now));
     }
 }

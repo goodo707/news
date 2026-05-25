@@ -2,6 +2,7 @@ package com.example.news.push.dispatcher;
 
 import com.example.news.core.domain.Article;
 import com.example.news.core.domain.User;
+import com.example.news.core.util.TimeFormats;
 import com.example.news.push.filter.UserFilterService;
 import com.example.news.push.log.PushLogRecorder;
 import com.example.news.push.notification.PushNotificationService;
@@ -12,16 +13,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class PushDispatchService {
-
-    private static final DateTimeFormatter FORMATTER =
-        DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
 
     private final UserFilterService userFilterService;
     private final PushNotificationService pushNotificationService;
@@ -33,7 +30,7 @@ public class PushDispatchService {
         List<User> targets = userFilterService.findTargetsForArticle(article);
         if (targets.isEmpty()) return;
 
-        String sentAt = LocalDateTime.now(clock).format(FORMATTER);
+        String sentAt = LocalDateTime.now(clock).format(TimeFormats.ISO_LOCAL_DATE_TIME);
         int success = 0, fail = 0;
 
         for (User user : targets) {

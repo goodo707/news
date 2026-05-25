@@ -4,6 +4,7 @@ import com.example.news.core.domain.Article;
 import com.example.news.core.domain.Category;
 import com.example.news.core.repository.ArticleRepository;
 import com.example.news.core.repository.CategoryRepository;
+import com.example.news.core.util.TimeFormats;
 import com.example.news.push.dispatcher.PushDispatchService;
 import com.example.news.rss.domain.RssCategory;
 import com.example.news.rss.parser.ArticleDraft;
@@ -15,9 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -30,10 +29,6 @@ import java.util.stream.Collectors;
 public class RssCollectorService {
 
     private static final long MAX_ARTICLES = 1000;
-
-    private static final DateTimeFormatter ISO_LOCAL = DateTimeFormatter
-        .ofPattern("yyyy-MM-dd'T'HH:mm:ss")
-        .withZone(ZoneId.of("Asia/Seoul"));
 
     private final RssParser rssParser;
     private final ArticleRepository articleRepository;
@@ -77,7 +72,7 @@ public class RssCollectorService {
 
         List<ArticleDraft> drafts = rssParser.parse(cat.getFeedUrl());
         int newCount = 0;
-        String now = ISO_LOCAL.format(ZonedDateTime.now(clock));
+        String now = LocalDateTime.now(clock).format(TimeFormats.ISO_LOCAL_DATE_TIME);
 
         List<String> draftIds = drafts.stream()
             .map(ArticleDraft::articleId)
