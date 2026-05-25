@@ -1,21 +1,21 @@
-package com.example.news.push.history;
+package com.example.news.push.log;
 
 import com.example.news.core.domain.Article;
-import com.example.news.core.domain.PushHistory;
+import com.example.news.core.domain.PushLog;
 import com.example.news.core.domain.User;
-import com.example.news.core.repository.PushHistoryRepository;
+import com.example.news.core.repository.PushLogRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
-public class PushHistoryRecorder {
+public class PushLogRecorder {
 
-    private final PushHistoryRepository pushHistoryRepository;
+    private final PushLogRepository pushLogRepository;
 
     public void record(User user, Article article, String categoryName,
                        String status, String sentAt) {
-        pushHistoryRepository.save(new PushHistory(
+        pushLogRepository.save(new PushLog(
             user.getDeviceId(),
             user.getPushType(),
             article.getArticleId(),

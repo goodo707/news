@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 @Table(name = "push_log")
 @Getter
 @NoArgsConstructor
-public class PushHistory {
+public class PushLog {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -35,8 +35,8 @@ public class PushHistory {
     @Column(nullable = false)
     private String status;
 
-    public PushHistory(String deviceId, String pushType, String articleId,
-                       String title, String category, String sentAt, String status) {
+    public PushLog(String deviceId, String pushType, String articleId,
+                   String title, String category, String sentAt, String status) {
         this.deviceId = deviceId;
         this.pushType = pushType;
         this.articleId = articleId;
