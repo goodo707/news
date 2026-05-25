@@ -31,7 +31,7 @@ public class ArticleController {
     @GetMapping
     public List<ArticleResponse> list(@RequestParam String category) {
         Long categoryId = categoryRepository.findByName(category)
-            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "category not found: " + category))
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "카테고리를 찾을 수 없습니다: " + category))
             .getId();
 
         List<Article> articles = articleRepository.findByCategoryIdOrderByPubDateDesc(categoryId);
@@ -55,7 +55,7 @@ public class ArticleController {
     public void markRead(@PathVariable String articleId) {
         // 존재하지 않는 article 에 대한 read 기록 차단 — 1000건 cleanup 으로 삭제된 ID 또는 잘못된 ID 방어
         if (!articleRepository.existsById(articleId)) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "article not found: " + articleId);
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "기사를 찾을 수 없습니다: " + articleId);
         }
         String now = LocalDateTime.now(clock).format(TimeFormats.ISO_LOCAL_DATE_TIME);
         articleReadRepository.save(new ArticleRead(articleId, now));
