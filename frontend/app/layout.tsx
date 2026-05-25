@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import { Noto_Sans_KR } from "next/font/google";
+import { cn } from "@/lib/utils";
 import "./globals.css";
 
 const notoSansKR = Noto_Sans_KR({
-  variable: "--font-noto-sans-kr",
+  variable: "--font-sans",
   subsets: ["latin"],
   weight: ["400", "500", "700", "900"],
   display: "swap",
@@ -20,8 +21,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ko" className={`${notoSansKR.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col">{children}</body>
+    <html lang="ko" className={cn("h-full antialiased", notoSansKR.variable)}>
+      <body className="min-h-full flex flex-col font-sans">{children}</body>
     </html>
   );
 }
