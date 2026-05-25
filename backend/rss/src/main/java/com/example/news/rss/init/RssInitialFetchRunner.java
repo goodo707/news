@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
@@ -12,6 +13,7 @@ import org.springframework.stereotype.Component;
 @Component
 @Order(2)
 @RequiredArgsConstructor
+@ConditionalOnProperty(name = "news.rss.initial-fetch.enabled", havingValue = "true", matchIfMissing = true)
 public class RssInitialFetchRunner implements ApplicationRunner {
 
     private final RssCollectorService rssCollectorService;

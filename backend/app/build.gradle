@@ -15,3 +15,7 @@ dependencies {
 bootRun {
     workingDir = rootProject.projectDir
 }
+
+test {
+    workingDir = rootProject.projectDir
+}
