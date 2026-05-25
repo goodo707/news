@@ -1,55 +1,66 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { CATEGORIES } from "@/lib/constants";
 
-interface HeaderProps {
-  activeCategory?: string;
+function getActiveCategory(pathname: string): string | undefined {
+  const match = pathname.match(/^\/category\/([^/]+)/);
+  if (!match) return undefined;
+  return decodeURIComponent(match[1]);
 }
 
-export function Header({ activeCategory }: HeaderProps) {
+export function Header() {
+  const pathname = usePathname();
+  const activeCategory = getActiveCategory(pathname);
+
+  if (activeCategory) {
+    return (
+      <header className="sticky top-0 z-50 bg-white border-b border-neutral-200">
+        <div className="max-w-5xl mx-auto flex items-center gap-8 px-6 py-3">
+          <Link
+            href="/"
+            className="text-xl font-black text-brand tracking-tight outline-none focus-visible:ring-2 focus-visible:ring-brand"
+          >
+            뉴스
+          </Link>
+          <nav aria-label="카테고리">
+            <ul className="flex items-center gap-1">
+              {CATEGORIES.map((cat) => {
+                const isActive = cat === activeCategory;
+                return (
+                  <li key={cat}>
+                    <Link
+                      href={`/category/${cat}`}
+                      aria-current={isActive ? "page" : undefined}
+                      className={`block px-3 py-1.5 rounded text-sm font-bold tracking-tight outline-none focus-visible:ring-2 focus-visible:ring-brand transition-colors ${
+                        isActive
+                          ? "text-brand bg-brand-light"
+                          : "text-neutral-900 hover:text-brand hover:bg-neutral-50"
+                      }`}
+                    >
+                      {cat}
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </nav>
+        </div>
+      </header>
+    );
+  }
+
   return (
     <header className="bg-white">
-      <div className="flex items-center justify-between px-6 py-2 text-xs text-neutral-600 border-b border-neutral-100">
-        <Link href="/" className="font-bold text-brand">
-          ← 홈
-        </Link>
-        <span>2026.05.25 (월)</span>
-      </div>
-
-      <div className="flex items-center justify-center gap-2 py-4">
-        <div
-          aria-hidden
-          className="relative w-8 h-8 rounded-full bg-brand flex items-center justify-center text-white font-black text-sm"
+      <div className="max-w-5xl mx-auto flex items-center justify-center border-b-2 border-neutral-900 py-6">
+        <Link
+          href="/"
+          className="text-3xl font-black text-brand tracking-tight outline-none focus-visible:ring-2 focus-visible:ring-brand"
         >
-          N
-          <span className="absolute top-1 right-1 w-1.5 h-1.5 bg-accent-red rounded-full" />
-        </div>
-        <span className="text-2xl font-black text-brand tracking-tight">
           뉴스
-        </span>
+        </Link>
       </div>
-
-      <nav aria-label="카테고리" className="border-b-2 border-neutral-900 px-6">
-        <ul className="flex">
-          {CATEGORIES.map((cat) => {
-            const isActive = cat === activeCategory;
-            return (
-              <li key={cat}>
-                <Link
-                  href={`/category/${cat}`}
-                  aria-current={isActive ? "page" : undefined}
-                  className={`block px-4 py-3 text-sm font-bold tracking-tight outline-none focus-visible:ring-2 focus-visible:ring-brand transition-colors ${
-                    isActive
-                      ? "text-brand border-b-[0.1875rem] border-brand -mb-0.5"
-                      : "text-neutral-900 hover:text-brand"
-                  }`}
-                >
-                  {cat}
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
-      </nav>
     </header>
   );
 }

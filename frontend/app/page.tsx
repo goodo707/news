@@ -1,5 +1,3 @@
-import { Header } from "@/components/layout/Header";
-import { FeaturedCategoryCard } from "@/components/home/FeaturedCategoryCard";
 import { MiniCategoryCard } from "@/components/home/MiniCategoryCard";
 import { getArticles } from "@/lib/api/articles";
 
@@ -18,22 +16,18 @@ export default async function Home() {
     CATEGORY_META.map((c) => getArticles(c.name).catch(() => [])),
   );
 
-  const [featured, ...rest] = CATEGORY_META.map((meta, i) => ({
+  const categoryCards = CATEGORY_META.map((meta, i) => ({
     ...meta,
     topArticles: articlesByCategory[i].slice(0, 3),
   }));
 
   return (
     <main id="main-content">
-      <Header />
-      <section className="grid grid-cols-1 gap-6 p-6 md:grid-cols-[1.4fr_1fr]">
+      <section className="grid grid-cols-1 gap-3 p-6 sm:grid-cols-2 lg:grid-cols-5">
         <h1 className="sr-only">카테고리별 최신 뉴스</h1>
-        <FeaturedCategoryCard {...featured} />
-        <div className="grid grid-cols-2 gap-3">
-          {rest.map((cat) => (
-            <MiniCategoryCard key={cat.name} {...cat} />
-          ))}
-        </div>
+        {categoryCards.map((cat) => (
+          <MiniCategoryCard key={cat.name} {...cat} />
+        ))}
       </section>
     </main>
   );

@@ -1,10 +1,8 @@
 import Link from "next/link";
-import { Header } from "@/components/layout/Header";
 
 export default function NotFound() {
   return (
     <main id="main-content">
-      <Header />
       <div className="p-10 text-center">
         <h1 className="mb-2 text-2xl font-bold">
           카테고리를 찾을 수 없습니다

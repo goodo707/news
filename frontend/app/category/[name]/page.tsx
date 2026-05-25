@@ -1,6 +1,4 @@
 import { notFound } from "next/navigation";
-import { Header } from "@/components/layout/Header";
-import { CategoryHeader } from "@/components/category/CategoryHeader";
 import { FeaturedArticle } from "@/components/category/FeaturedArticle";
 import { ArticleListItem } from "@/components/category/ArticleListItem";
 import { CATEGORIES, type CategoryName } from "@/lib/constants";
@@ -38,8 +36,9 @@ export default async function CategoryPage({ params }: PageProps) {
   if (articles.length === 0) {
     return (
       <main id="main-content">
-        <Header activeCategory={name} />
-        <CategoryHeader name={name} count={0} />
+        <div className="border-b-2 border-neutral-900 px-6 pt-8 pb-3">
+          <h1 className="text-4xl font-black tracking-tight">{name}</h1>
+        </div>
         <p className="p-10 text-center text-sm text-muted-foreground">
           이 카테고리에 등록된 기사가 없습니다.
         </p>
@@ -51,9 +50,10 @@ export default async function CategoryPage({ params }: PageProps) {
 
   return (
     <main id="main-content">
-      <Header activeCategory={name} />
-      <CategoryHeader name={name} count={articles.length} />
-      <div className="space-y-10 p-6">
+      <div className="border-b-2 border-neutral-900 px-6 pt-8 pb-3">
+        <h1 className="text-4xl font-black tracking-tight">{name}</h1>
+      </div>
+      <div className="space-y-8 p-6">
         <FeaturedArticle article={featured} />
         <ul className="grid grid-cols-1 md:grid-cols-2">
           {rest.map((article) => (
