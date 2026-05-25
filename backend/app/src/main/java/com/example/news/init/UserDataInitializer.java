@@ -20,6 +20,12 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * Excel 의 사용자 100명을 최초 부팅 시 1회 적재한다.
+ *
+ * <p>RSS 수집({@code RssInitialFetchRunner} @Order(2))이 카테고리를 찾을 때
+ * 이 Runner 가 적재한 category 행을 기대하므로 @Order(1) 로 선행 실행.
+ */
 @Slf4j
 @Component
 @Order(1)
@@ -35,6 +41,7 @@ public class UserDataInitializer implements ApplicationRunner {
     @Override
     @Transactional
     public void run(ApplicationArguments args) throws Exception {
+        // 앱 재시작 시 Excel 을 다시 읽지 않도록 가드 — DB 가 SSOT
         if (userRepository.count() > 0) {
             log.info("사용자 데이터가 이미 존재합니다. 초기화를 건너뜁니다.");
             return;
@@ -50,13 +57,16 @@ public class UserDataInitializer implements ApplicationRunner {
                 Row row = sheet.getRow(i);
                 if (row == null) continue;
 
+                // Excel 의 No 컬럼을 users.id 로 그대로 사용 (auto-increment 미사용)
                 long no = (long) row.getCell(0).getNumericCellValue();
                 String name = row.getCell(1).getStringCellValue();
                 String deviceId = row.getCell(2).getStringCellValue();
+                // Excel 에는 "APNs" / "FCM" 으로 적혀 있으므로 대문자로 정규화 (DispatchService 의 switch 가 "APNS" 기대)
                 String pushType = row.getCell(3).getStringCellValue().toUpperCase();
                 String categories = row.getCell(4).getStringCellValue();
                 String dndTime = row.getCell(5).getStringCellValue();
 
+                // "-" = 방해 금지 시간 미설정 → 두 컬럼 모두 NULL 로 저장 → DndChecker 는 항상 false 반환
                 String dndStart = null;
                 String dndEnd = null;
                 if (!"-".equals(dndTime)) {
@@ -69,6 +79,8 @@ public class UserDataInitializer implements ApplicationRunner {
                     new User(no, name, deviceId, pushType, dndStart, dndEnd)
                 );
 
+                // 카테고리는 여기서 동적으로 생성 — Excel 에 등장하는 5개가 곧 시스템 전체 카테고리.
+                // RSS 수집 시 RssCollectorService 가 findByName 으로 이 행들을 참조.
                 for (String catName : categories.split(",")) {
                     Category category = categoryRepository.findByName(catName.trim())
                         .orElseGet(() -> categoryRepository.save(new Category(catName.trim())));

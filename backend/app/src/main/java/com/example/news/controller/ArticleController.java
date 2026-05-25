@@ -40,6 +40,8 @@ public class ArticleController {
         List<Article> articles = articleRepository.findByCategoryIdOrderByPubDateDesc(categoryId);
         List<String> articleIds = articles.stream().map(Article::getArticleId).toList();
 
+        // N+1 회피: 기사별로 isRead 조회 대신 한 번에 read 상태를 가져와 메모리 Set 으로 매칭.
+        // JOIN 대신 두 쿼리로 분리한 이유 — Article 은 외부(RSS) 데이터, read 는 사용자 행동 데이터로 lifecycle 분리.
         Set<String> readIds = articleReadRepository.findAllById(articleIds).stream()
             .map(ArticleRead::getArticleId)
             .collect(Collectors.toSet());
@@ -54,6 +56,7 @@ public class ArticleController {
 
     @PostMapping("/{articleId}/read")
     public void markRead(@PathVariable String articleId) {
+        // 존재하지 않는 article 에 대한 read 기록 차단 — 1000건 cleanup 으로 삭제된 ID 또는 잘못된 ID 방어
         if (!articleRepository.existsById(articleId)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "article not found: " + articleId);
         }
