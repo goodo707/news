@@ -42,3 +42,4 @@ logs/
 # Claude Code 작업용 설계 문서 (로컬 전용)
 docs/superpowers/
 CLAUDE.md
+.superpowers/brainstorm/
