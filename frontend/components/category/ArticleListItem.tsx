@@ -2,6 +2,7 @@
 
 import { useArticleRead } from "@/lib/hooks/useArticleRead";
 import type { Article } from "@/lib/types/domain";
+import { formatPubDate } from "@/lib/utils";
 
 interface Props {
   article: Article;
@@ -33,7 +34,7 @@ export function ArticleListItem({ article, categoryName }: Props) {
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <span>{article.author || "(작성자 미상)"}</span>
           <span className="text-neutral-300">·</span>
-          <time dateTime={article.pubDate}>{article.pubDate}</time>
+          <time dateTime={article.pubDate}>{formatPubDate(article.pubDate)}</time>
           {isRead && (
             <span className="rounded-sm bg-muted px-1.5 py-0.5 text-xs">
               <span className="sr-only">상태: </span>읽음

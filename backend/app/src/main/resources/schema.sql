@@ -25,12 +25,12 @@ CREATE TABLE IF NOT EXISTS article (
     author     TEXT,
     category_id INTEGER NOT NULL,
     pub_date   TEXT    NOT NULL,
-    created_at TEXT    NOT NULL DEFAULT (datetime('now', 'localtime'))
+    created_at TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%S', 'now', 'localtime'))
 );
 
 CREATE TABLE IF NOT EXISTS article_read (
     article_id TEXT NOT NULL PRIMARY KEY,
-    read_at    TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
+    read_at    TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%S', 'now', 'localtime'))
 );
 
 CREATE TABLE IF NOT EXISTS push_log (
@@ -40,7 +40,7 @@ CREATE TABLE IF NOT EXISTS push_log (
     article_id TEXT NOT NULL,
     title      TEXT NOT NULL,
     category   TEXT NOT NULL,
-    sent_at    TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
+    sent_at    TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%S', 'now', 'localtime')),
     status     TEXT NOT NULL
 );
 
