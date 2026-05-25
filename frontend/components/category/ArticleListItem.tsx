@@ -31,7 +31,7 @@ export function ArticleListItem({ article, categoryName }: Props) {
           {article.title}
         </h3>
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <span>{article.author}</span>
+          <span>{article.author || "(작성자 미상)"}</span>
           <span className="text-neutral-300">·</span>
           <time dateTime={article.pubDate}>{article.pubDate}</time>
           {isRead && (

@@ -15,7 +15,7 @@ export default function GlobalError({ error, reset }: ErrorProps) {
       : error.message || "잠시 후 다시 시도해주세요.";
 
   return (
-    <main className="p-10 text-center">
+    <main id="main-content" className="p-10 text-center">
       <h1 className="mb-2 text-2xl font-bold">문제가 발생했습니다</h1>
       <p className="mb-6 text-sm text-muted-foreground">{message}</p>
       <div className="flex justify-center gap-3">
