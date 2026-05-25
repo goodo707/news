@@ -37,7 +37,7 @@ export default async function CategoryPage({ params }: PageProps) {
 
   if (articles.length === 0) {
     return (
-      <main>
+      <main id="main-content">
         <Header activeCategory={name} />
         <CategoryHeader name={name} count={0} />
         <p className="p-10 text-center text-sm text-muted-foreground">
@@ -50,7 +50,7 @@ export default async function CategoryPage({ params }: PageProps) {
   const [featured, ...rest] = articles;
 
   return (
-    <main>
+    <main id="main-content">
       <Header activeCategory={name} />
       <CategoryHeader name={name} count={articles.length} />
       <div className="grid grid-cols-1 gap-7 p-6 md:grid-cols-[1.2fr_1fr]">

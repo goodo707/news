@@ -23,6 +23,7 @@ export function ArticleListItem({ article }: Props) {
         href={article.link}
         target="_blank"
         rel="noopener noreferrer"
+        aria-label={`${article.title} (새 탭에서 열림)${isRead ? " — 읽은 기사" : ""}`}
         onClick={handleClick}
         className={`block py-3.5 outline-none hover:text-brand focus-visible:text-brand focus-visible:ring-2 focus-visible:ring-brand ${
           isRead ? "opacity-55" : ""

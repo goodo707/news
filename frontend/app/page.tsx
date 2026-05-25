@@ -24,7 +24,7 @@ export default async function Home() {
   }));
 
   return (
-    <main>
+    <main id="main-content">
       <Header />
       <section className="grid grid-cols-1 gap-6 p-6 md:grid-cols-[1.4fr_1fr]">
         <h1 className="sr-only">카테고리별 최신 뉴스</h1>

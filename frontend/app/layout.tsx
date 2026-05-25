@@ -23,6 +23,12 @@ export default function RootLayout({
   return (
     <html lang="ko" className={cn("h-full antialiased", notoSansKR.variable)}>
       <body className="min-h-full font-sans bg-neutral-100">
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:rounded focus:bg-brand focus:px-4 focus:py-2 focus:text-white focus:shadow-lg"
+        >
+          본문 바로가기
+        </a>
         <div className="max-w-5xl mx-auto bg-white shadow-sm min-h-screen">
           {children}
         </div>

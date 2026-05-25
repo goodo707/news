@@ -3,7 +3,7 @@ import { Header } from "@/components/layout/Header";
 
 export default function NotFound() {
   return (
-    <main>
+    <main id="main-content">
       <Header />
       <div className="p-10 text-center">
         <h1 className="mb-2 text-2xl font-bold">
