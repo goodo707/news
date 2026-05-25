@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+import { apiClient } from "@/lib/api/client";
 import { Badge } from "@/components/ui/badge";
 import type { Article } from "@/lib/types/domain";
 
@@ -8,8 +10,18 @@ interface Props {
 }
 
 export function FeaturedArticle({ article }: Props) {
+  const [localRead, setLocalRead] = useState(false);
+  const isRead = article.isRead || localRead;
+
+  const handleClick = () => {
+    setLocalRead(true);
+    void apiClient.POST("/articles/{articleId}/read", {
+      params: { path: { articleId: article.articleId } },
+    });
+  };
+
   return (
-    <article className="flex flex-col border-r border-border pr-7">
+    <article className={`flex flex-col border-r border-border pr-7 ${isRead ? "opacity-60" : ""}`}>
       <Badge className="self-start border-transparent bg-accent-red text-white">
         최신
       </Badge>
@@ -17,6 +29,7 @@ export function FeaturedArticle({ article }: Props) {
         href={article.link}
         target="_blank"
         rel="noopener noreferrer"
+        onClick={handleClick}
         className="mt-2.5 text-2xl font-black leading-tight tracking-tight outline-none hover:text-brand focus-visible:text-brand focus-visible:ring-2 focus-visible:ring-brand"
       >
         {article.title}
@@ -25,6 +38,11 @@ export function FeaturedArticle({ article }: Props) {
         <span>{article.author}</span>
         <span className="text-neutral-300">·</span>
         <time dateTime={article.pubDate}>{article.pubDate}</time>
+        {isRead && (
+          <span className="rounded-sm bg-muted px-1.5 py-0.5 text-[0.625rem]">
+            <span className="sr-only">상태: </span>읽음
+          </span>
+        )}
       </div>
     </article>
   );

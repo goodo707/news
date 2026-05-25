@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+import { apiClient } from "@/lib/api/client";
 import type { Article } from "@/lib/types/domain";
 
 interface Props {
@@ -7,10 +9,14 @@ interface Props {
 }
 
 export function ArticleListItem({ article }: Props) {
-  const isRead = article.isRead;
+  const [localRead, setLocalRead] = useState(false);
+  const isRead = article.isRead || localRead;
 
-  const handleClick = (_e: React.MouseEvent<HTMLAnchorElement>) => {
-    // Task 13에서 읽음 처리 POST 추가
+  const handleClick = () => {
+    setLocalRead(true);
+    void apiClient.POST("/articles/{articleId}/read", {
+      params: { path: { articleId: article.articleId } },
+    });
   };
 
   return (
