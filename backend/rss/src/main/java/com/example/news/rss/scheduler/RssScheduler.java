@@ -20,8 +20,11 @@ public class RssScheduler {
 
     private final RssCollectorService rssCollectorService;
 
+    // fixedDelay 사용 — 이전 cycle 종료 후 interval 만큼 대기.
+    // RSS 외부 호출이 10분을 넘기는 비정상 케이스에도 누락분 catch-up 시도가 없어 외부 서버에 정중함.
+    // 또한 미래에 scheduling pool size 가 늘어나도 중복 실행이 발생하지 않음.
     @Scheduled(
-        fixedRateString = "${news.rss.scheduler.interval-ms:600000}",
+        fixedDelayString = "${news.rss.scheduler.interval-ms:600000}",
         initialDelayString = "${news.rss.scheduler.initial-delay-ms:5000}"
     )
     public void collectRss() {
