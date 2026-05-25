@@ -17,6 +17,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Rome 라이브러리로 RSS XML → {@link ArticleDraft} 변환.
+ *
+ * <p>외부 RSS 서버의 무한 대기 / 느린 응답에 대비해 connect 5초, read 10초 타임아웃을 명시.
+ * 파싱 자체 실패 시 빈 리스트를 반환하여 상위(RssCollectorService) 에서
+ * 카테고리 단위 부분 실패 격리를 가능하게 한다.
+ */
 @Slf4j
 @Component
 @RequiredArgsConstructor

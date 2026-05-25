@@ -79,6 +79,8 @@ public class RssCollectorService {
         int newCount = 0;
         String now = LocalDateTime.now(clock).format(TimeFormats.ISO_LOCAL_DATE_TIME);
 
+        // 1쿼리 배치 lookup 으로 이미 존재하는 article_id 를 한 번에 조회 (N+1 회피).
+        // Set 으로 모아 for 루프 안에서 O(1) contains 매칭.
         List<String> draftIds = drafts.stream()
             .map(ArticleDraft::articleId)
             .filter(Objects::nonNull)
