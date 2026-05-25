@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { apiClient } from "@/lib/api/client";
+import { markArticleRead } from "@/lib/actions";
 import type { Article } from "@/lib/types/domain";
 
 interface Props {
@@ -14,9 +14,7 @@ export function ArticleListItem({ article }: Props) {
 
   const handleClick = () => {
     setLocalRead(true);
-    void apiClient.POST("/articles/{articleId}/read", {
-      params: { path: { articleId: article.articleId } },
-    });
+    void markArticleRead(article.articleId);
   };
 
   return (
