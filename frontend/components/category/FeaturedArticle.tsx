@@ -19,7 +19,7 @@ export function FeaturedArticle({ article }: Props) {
   };
 
   return (
-    <article className={`flex flex-col border-r border-border pr-7 ${isRead ? "opacity-60" : ""}`}>
+    <article className={`flex flex-col border-b-2 border-foreground pb-8 ${isRead ? "opacity-60" : ""}`}>
       <Badge className="self-start border-transparent bg-accent-red text-white">
         최신
       </Badge>

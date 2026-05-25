@@ -18,7 +18,7 @@ export function ArticleListItem({ article }: Props) {
   };
 
   return (
-    <li className="border-b border-border">
+    <li className="border-b border-border md:odd:border-r md:odd:pr-7 md:even:pl-7">
       <a
         href={article.link}
         target="_blank"

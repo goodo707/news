@@ -53,9 +53,9 @@ export default async function CategoryPage({ params }: PageProps) {
     <main id="main-content">
       <Header activeCategory={name} />
       <CategoryHeader name={name} count={articles.length} />
-      <div className="grid grid-cols-1 gap-7 p-6 md:grid-cols-[1.2fr_1fr]">
+      <div className="space-y-10 p-6">
         <FeaturedArticle article={featured} />
-        <ul>
+        <ul className="grid grid-cols-1 md:grid-cols-2">
           {rest.map((article) => (
             <ArticleListItem key={article.articleId} article={article} />
           ))}
