@@ -1,5 +1,8 @@
 import { notFound } from "next/navigation";
 import { Header } from "@/components/layout/Header";
+import { CategoryHeader } from "@/components/category/CategoryHeader";
+import { FeaturedArticle } from "@/components/category/FeaturedArticle";
+import { ArticleListItem } from "@/components/category/ArticleListItem";
 import { CATEGORIES, type CategoryName } from "@/lib/constants";
 import { getArticles } from "@/lib/api/articles";
 
@@ -32,18 +35,32 @@ export default async function CategoryPage({ params }: PageProps) {
 
   const articles = await getArticles(name);
 
+  if (articles.length === 0) {
+    return (
+      <main>
+        <Header activeCategory={name} />
+        <CategoryHeader name={name} count={0} />
+        <p className="p-10 text-center text-sm text-muted-foreground">
+          이 카테고리에 등록된 기사가 없습니다.
+        </p>
+      </main>
+    );
+  }
+
+  const [featured, ...rest] = articles;
+
   return (
     <main>
       <Header activeCategory={name} />
-      <section className="p-6">
-        <h1 className="text-3xl font-black tracking-tight">{name}</h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          기사 {articles.length}건
-        </p>
-        <div className="mt-6 text-sm text-muted-foreground">
-          (TODO: 피처드 기사 + 리스트 UI)
-        </div>
-      </section>
+      <CategoryHeader name={name} count={articles.length} />
+      <div className="grid grid-cols-1 gap-7 p-6 md:grid-cols-[1.2fr_1fr]">
+        <FeaturedArticle article={featured} />
+        <ul>
+          {rest.map((article) => (
+            <ArticleListItem key={article.articleId} article={article} />
+          ))}
+        </ul>
+      </div>
     </main>
   );
 }
