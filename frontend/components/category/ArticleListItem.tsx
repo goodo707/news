@@ -5,10 +5,11 @@ import type { Article } from "@/lib/types/domain";
 
 interface Props {
   article: Article;
+  categoryName: string;
 }
 
-export function ArticleListItem({ article }: Props) {
-  const { isRead, handleClick } = useArticleRead(article);
+export function ArticleListItem({ article, categoryName }: Props) {
+  const { isRead, handleClick } = useArticleRead(article, categoryName);
 
   return (
     <li className="border-b border-border md:odd:border-r md:odd:pr-7 md:even:pl-7">

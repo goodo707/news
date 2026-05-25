@@ -41,10 +41,14 @@ export default async function CategoryPage({ params }: PageProps) {
       </div>
       {featured ? (
         <div className="space-y-8 p-6">
-          <FeaturedArticle article={featured} />
+          <FeaturedArticle article={featured} categoryName={name} />
           <ul className="grid grid-cols-1 md:grid-cols-2">
             {rest.map((article) => (
-              <ArticleListItem key={article.articleId} article={article} />
+              <ArticleListItem
+                key={article.articleId}
+                article={article}
+                categoryName={name}
+              />
             ))}
           </ul>
         </div>

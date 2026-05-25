@@ -6,10 +6,11 @@ import type { Article } from "@/lib/types/domain";
 
 interface Props {
   article: Article;
+  categoryName: string;
 }
 
-export function FeaturedArticle({ article }: Props) {
-  const { isRead, handleClick } = useArticleRead(article);
+export function FeaturedArticle({ article, categoryName }: Props) {
+  const { isRead, handleClick } = useArticleRead(article, categoryName);
 
   return (
     <article className={`flex flex-col border-b border-border pb-6 ${isRead ? "opacity-60" : ""}`}>
