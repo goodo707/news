@@ -23,8 +23,10 @@ import org.springframework.transaction.annotation.Transactional;
 /**
  * Excel 의 사용자 100명을 최초 부팅 시 1회 적재한다.
  *
- * <p>RSS 수집({@code RssInitialFetchRunner} @Order(2))이 카테고리를 찾을 때
- * 이 Runner 가 적재한 category 행을 기대하므로 @Order(1) 로 선행 실행.
+ * <p>{@code RssScheduler} 의 수집 cycle 이 {@code categoryRepository.findByName(...)} 로
+ * 카테고리를 조회하므로 이 Runner 가 먼저 category 행을 만들어야 한다.
+ * ApplicationRunner 라 ApplicationContext refresh 완료 시점에 동기 실행되며,
+ * 그 뒤 RssScheduler 는 initialDelay 후 비동기로 시작된다.
  */
 @Slf4j
 @Component

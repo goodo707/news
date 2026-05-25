@@ -15,7 +15,7 @@ public class RssScheduler {
 
     @Scheduled(
         fixedRateString = "${news.rss.scheduler.interval-ms:600000}",
-        initialDelayString = "${news.rss.scheduler.initial-delay-ms:60000}"
+        initialDelayString = "${news.rss.scheduler.initial-delay-ms:5000}"
     )
     public void collectRss() {
         rssCollectorService.collectAll();
