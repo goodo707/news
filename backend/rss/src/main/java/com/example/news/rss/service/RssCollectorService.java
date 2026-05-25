@@ -36,6 +36,8 @@ public class RssCollectorService {
     private final PushDispatchService pushDispatchService;
     private final Clock clock;
 
+    // @Transactional 없음 — 카테고리 단위 try-catch 로 부분 실패 격리.
+    // 한 피드 실패가 다른 피드 INSERT 에 영향 없도록 의도적으로 단일 트랜잭션을 피한다.
     public void collectAll() {
         int totalNew = 0;
         for (RssCategory cat : RssCategory.values()) {
@@ -62,6 +64,9 @@ public class RssCollectorService {
             oldest.size(), total, MAX_ARTICLES);
     }
 
+    // @Transactional 없음 — for 루프 안에서 article 별 자체 transaction 으로 저장.
+    // PushDispatchService.dispatch 도 자체 @Transactional 을 가지므로 push 실패가
+    // article INSERT 를 롤백하지 않도록 분리한다.
     public int collectOne(RssCategory cat) {
         Optional<Category> categoryOpt = categoryRepository.findByName(cat.getCategoryName());
         if (categoryOpt.isEmpty()) {

@@ -9,6 +9,7 @@ import com.example.news.core.util.TimeFormats;
 import com.example.news.dto.ArticleResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -29,6 +30,7 @@ public class ArticleController {
     private final Clock clock;
 
     @GetMapping
+    @Transactional(readOnly = true)
     public List<ArticleResponse> list(@RequestParam String category) {
         Long categoryId = categoryRepository.findByName(category)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "카테고리를 찾을 수 없습니다: " + category))
@@ -52,6 +54,7 @@ public class ArticleController {
     }
 
     @PostMapping("/{articleId}/read")
+    @Transactional
     public void markRead(@PathVariable String articleId) {
         // 존재하지 않는 article 에 대한 read 기록 차단 — 1000건 cleanup 으로 삭제된 ID 또는 잘못된 ID 방어
         if (!articleRepository.existsById(articleId)) {
