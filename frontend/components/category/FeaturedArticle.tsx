@@ -1,8 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { markArticleRead } from "@/lib/actions";
 import { Badge } from "@/components/ui/badge";
+import { useArticleRead } from "@/lib/hooks/useArticleRead";
 import type { Article } from "@/lib/types/domain";
 
 interface Props {
@@ -10,13 +9,7 @@ interface Props {
 }
 
 export function FeaturedArticle({ article }: Props) {
-  const [localRead, setLocalRead] = useState(false);
-  const isRead = article.isRead || localRead;
-
-  const handleClick = () => {
-    setLocalRead(true);
-    void markArticleRead(article.articleId);
-  };
+  const { isRead, handleClick } = useArticleRead(article);
 
   return (
     <article className={`flex flex-col border-b border-border pb-6 ${isRead ? "opacity-60" : ""}`}>
