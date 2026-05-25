@@ -32,20 +32,6 @@ export default async function CategoryPage({ params }: PageProps) {
   }
 
   const articles = await getArticles(name);
-
-  if (articles.length === 0) {
-    return (
-      <main id="main-content">
-        <div className="border-b-2 border-neutral-900 px-6 pt-8 pb-3">
-          <h1 className="text-4xl font-black tracking-tight">{name}</h1>
-        </div>
-        <p className="p-10 text-center text-sm text-muted-foreground">
-          이 카테고리에 등록된 기사가 없습니다.
-        </p>
-      </main>
-    );
-  }
-
   const [featured, ...rest] = articles;
 
   return (
@@ -53,14 +39,20 @@ export default async function CategoryPage({ params }: PageProps) {
       <div className="border-b-2 border-neutral-900 px-6 pt-8 pb-3">
         <h1 className="text-4xl font-black tracking-tight">{name}</h1>
       </div>
-      <div className="space-y-8 p-6">
-        <FeaturedArticle article={featured} />
-        <ul className="grid grid-cols-1 md:grid-cols-2">
-          {rest.map((article) => (
-            <ArticleListItem key={article.articleId} article={article} />
-          ))}
-        </ul>
-      </div>
+      {featured ? (
+        <div className="space-y-8 p-6">
+          <FeaturedArticle article={featured} />
+          <ul className="grid grid-cols-1 md:grid-cols-2">
+            {rest.map((article) => (
+              <ArticleListItem key={article.articleId} article={article} />
+            ))}
+          </ul>
+        </div>
+      ) : (
+        <p className="p-10 text-center text-sm text-muted-foreground">
+          이 카테고리에 등록된 기사가 없습니다.
+        </p>
+      )}
     </main>
   );
 }
