@@ -22,7 +22,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ko" className={cn("h-full antialiased", notoSansKR.variable)}>
-      <body className="min-h-full flex flex-col font-sans">{children}</body>
+      <body className="min-h-full font-sans bg-neutral-100">
+        <div className="max-w-5xl mx-auto bg-white shadow-sm min-h-screen">
+          {children}
+        </div>
+      </body>
     </html>
   );
 }
