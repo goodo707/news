@@ -38,11 +38,14 @@ export function MiniCategoryCard({ name, icon, topArticles }: Props) {
             {topArticles.map((article, i) => (
               <li
                 key={article.articleId}
-                className={`line-clamp-1 py-1.5 text-xs leading-snug text-muted-foreground ${
+                className={`flex items-center gap-1 py-1.5 text-xs text-muted-foreground ${
                   i > 0 ? "border-t border-border" : ""
                 }`}
               >
-                <span className="font-bold text-brand">·</span> {article.title}
+                <span aria-hidden className="shrink-0 font-bold text-brand">
+                  ·
+                </span>
+                <span className="min-w-0 truncate">{article.title}</span>
               </li>
             ))}
           </ul>

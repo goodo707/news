@@ -55,7 +55,7 @@ export function FeaturedCategoryCard({ name, icon, topArticles }: Props) {
                 <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded bg-white/15 text-[0.625rem] font-bold">
                   {i + 1}
                 </span>
-                <span className="line-clamp-2">{article.title}</span>
+                <span className="min-w-0 line-clamp-2">{article.title}</span>
               </li>
             ))}
           </ul>
