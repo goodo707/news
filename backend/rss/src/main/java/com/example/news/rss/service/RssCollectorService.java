@@ -10,6 +10,7 @@ import com.example.news.rss.parser.ArticleDraft;
 import com.example.news.rss.parser.RssParser;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -58,9 +59,12 @@ public class RssCollectorService {
         if (total <= MAX_ARTICLES) return;
 
         int toDelete = (int) (total - MAX_ARTICLES);
-        int deleted = articleRepository.deleteOldestN(toDelete);
+        List<Article> oldest = articleRepository.findAllByOrderByPubDateAsc(
+            PageRequest.of(0, toDelete)
+        );
+        articleRepository.deleteAllInBatch(oldest);
         log.info("[rss] cleanup: {}건 삭제 (전 {} → 후 {})",
-            deleted, total, MAX_ARTICLES);
+            oldest.size(), total, MAX_ARTICLES);
     }
 
     public int collectOne(RssCategory cat) {
