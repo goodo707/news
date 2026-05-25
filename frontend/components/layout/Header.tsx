@@ -9,7 +9,9 @@ export function Header({ activeCategory }: HeaderProps) {
   return (
     <header className="bg-white">
       <div className="flex items-center justify-between px-6 py-2 text-xs text-neutral-600 border-b border-neutral-100">
-        <Link href="/" className="font-bold text-brand">← 홈</Link>
+        <Link href="/" className="font-bold text-brand">
+          ← 홈
+        </Link>
         <span>2026.05.25 (월)</span>
       </div>
 
@@ -21,7 +23,9 @@ export function Header({ activeCategory }: HeaderProps) {
           N
           <span className="absolute top-1 right-1 w-1.5 h-1.5 bg-accent-red rounded-full" />
         </div>
-        <span className="text-2xl font-black text-brand tracking-tight">뉴스</span>
+        <span className="text-2xl font-black text-brand tracking-tight">
+          뉴스
+        </span>
       </div>
 
       <nav aria-label="카테고리" className="border-b-2 border-neutral-900 px-6">
@@ -35,7 +39,7 @@ export function Header({ activeCategory }: HeaderProps) {
                   aria-current={isActive ? "page" : undefined}
                   className={`block px-4 py-3 text-sm font-bold tracking-tight outline-none focus-visible:ring-2 focus-visible:ring-brand transition-colors ${
                     isActive
-                      ? "text-brand border-b-[3px] border-brand -mb-[2px]"
+                      ? "text-brand border-b-[0.1875rem] border-brand -mb-0.5"
                       : "text-neutral-900 hover:text-brand"
                   }`}
                 >
